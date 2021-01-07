@@ -18,7 +18,7 @@ const pool = new Pool({
  */
 const getUserWithEmail = function(email) {
   return pool.query(`
-  SELECT * FROM users
+    SELECT * FROM users;
   `)
   .then(res => {
     for (const row of res.rows) {
@@ -39,7 +39,7 @@ exports.getUserWithEmail = getUserWithEmail;
  */
 const getUserWithId = function(id) {
   return pool.query(`
-  SELECT * FROM users
+    SELECT * FROM users;
   `)
   .then(res => {
     for (const row of res.rows) {
@@ -59,10 +59,13 @@ exports.getUserWithId = getUserWithId;
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser =  function(user) {
-  const userId = Object.keys(users).length + 1;
-  user.id = userId;
-  users[userId] = user;
-  return Promise.resolve(user);
+  return pool.query(`
+    INSERT INTO users (name, email, password)
+    VALUES ($1, $2, $3)
+    RETURNING *;
+  `, Object.values(user))
+  .then(res => res)
+  .catch(err => console.error('query error', err.stack))
 }
 exports.addUser = addUser;
 
@@ -88,8 +91,8 @@ exports.getAllReservations = getAllReservations;
  */
 const getAllProperties = function(options, limit = 10) {
   return pool.query(`
-  SELECT * FROM properties
-  LIMIT $1
+    SELECT * FROM properties
+    LIMIT $1
   `, [limit])
   .then(res => res.rows)
   .catch(err => console.error('query error', err.stack));
