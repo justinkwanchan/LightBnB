@@ -108,7 +108,7 @@ const getAllProperties = function(options, limit = 10) {
   let queryString = `
   SELECT properties.*, avg(property_reviews.rating) as average_rating
   FROM properties
-  JOIN property_reviews ON properties.id = property_id
+  LEFT JOIN property_reviews ON properties.id = property_id
   `;
 
   // 3
@@ -127,7 +127,6 @@ const getAllProperties = function(options, limit = 10) {
 
   // 3.2
   if (options.minimum_price_per_night && options.maximum_price_per_night) {
-    console.log('queryParam.length:', queryParams.length);
     queryParams.push(options.minimum_price_per_night * 100, options.maximum_price_per_night * 100);
     queryString += `
     ${queryParams.length > 2 ? 'AND' : 'WHERE'} cost_per_night >= $${queryParams.length - 1}
@@ -169,9 +168,19 @@ exports.getAllProperties = getAllProperties;
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function(property) {
-  const propertyId = Object.keys(properties).length + 1;
-  property.id = propertyId;
-  properties[propertyId] = property;
-  return Promise.resolve(property);
+  const inputObj = { ...property };
+  inputObj.cost_per_night *= 100;
+
+  const queryString = `
+  INSERT INTO properties (${Object.keys(inputObj).join(', ')})
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+  RETURNING *;
+  `;
+
+  return pool.query(queryString, Object.values(inputObj))
+  .then(res => {
+    return res.rows[0];
+  })
+  .catch(err => console.error('query string', err.stack));
 }
 exports.addProperty = addProperty;
