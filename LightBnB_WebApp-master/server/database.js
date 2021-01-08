@@ -64,7 +64,7 @@ const addUser =  function(user) {
     VALUES ($1, $2, $3)
     RETURNING *;
   `, Object.values(user))
-  .then(res => res)
+  .then(res => res.rows[0])
   .catch(err => console.error('query error', err.stack))
 }
 exports.addUser = addUser;
@@ -178,9 +178,7 @@ const addProperty = function(property) {
   `;
 
   return pool.query(queryString, Object.values(inputObj))
-  .then(res => {
-    return res.rows[0];
-  })
+  .then(res => res.rows[0])
   .catch(err => console.error('query string', err.stack));
 }
 exports.addProperty = addProperty;
